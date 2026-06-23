@@ -71,7 +71,7 @@ def train_densenet(train_loader, test_loader, config, epochs=50, lr=0.001, model
         densenet = model
 
     # CrossEntropy com pesos por classe
-    criterion = nn.CrossEntropyLoss(weight=config.class_weights, label_smoothing=0.1   )
+    criterion = nn.CrossEntropyLoss(weight=config.class_weights, label_smoothing=0.1)
 
     optimizer = _build_optimizer(densenet, lr)
 
@@ -80,7 +80,18 @@ def train_densenet(train_loader, test_loader, config, epochs=50, lr=0.001, model
         optimizer, mode="max", patience=7, factor=0.3, min_lr=1e-7
     )
 
-    densenet = train_loop(densenet, optimizer, criterion, train_loader, config, epochs, test_loader, scheduler)
+    densenet = train_loop(
+        densenet, 
+        optimizer, 
+        criterion, 
+        train_loader, 
+        config, 
+        epochs, 
+        test_loader, 
+        scheduler,
+        verbose=config.verbose, 
+        logger=config.logger
+    )
 
     metrics = evaluate_model(densenet, test_loader)
 
@@ -94,12 +105,13 @@ def train_densenet(train_loader, test_loader, config, epochs=50, lr=0.001, model
 
 
 def train_densenet_kfold(dataset, test_loader, config, epochs=10, lr=0.001, model=None):
+ 
+    log = config.logger.log if config.logger else print
+
     if model is None:
         densenet = setup_densenet(config.device, config.num_classes)
     else:
         densenet = model
-
-    log = config.logger.log if config.logger else print
 
     # Para K-Fold calculamos os pesos sobre o dataset completo
     all_labels = np.array([dataset[i][1] for i in range(len(dataset))])

@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import models
+from sklearn.utils.class_weight import compute_class_weight
+import numpy as np
 from src.services.models.trainer import train_loop, train_kfold
 from src.services.models.metrics import evaluate_model
 
@@ -17,11 +19,10 @@ def _build_optimizer(model, lr):
 
     return optim.Adam(
         [
-            {"params": base_model.layer3.parameters(), "lr": lr / 100},
             {"params": base_model.layer4.parameters(), "lr": lr / 10},
             {"params": base_model.fc.parameters(), "lr": lr},
         ],
-        weight_decay=1e-4,
+        weight_decay=1e-3,
     )
 
 def setup_resnet(device, num_classes):
@@ -35,71 +36,93 @@ def setup_resnet(device, num_classes):
     #Unfreeze last features for better learning
     for param in resnet.layer4.parameters():
         param.requires_grad = True
-
-    for param in resnet.layer3.parameters():
-        param.requires_grad = True
     
     num_in_features = resnet.fc.in_features
 
-    resnet.fc = nn.Linear(num_in_features, num_classes)
-
-    if torch.cuda.device_count() > 1:
-        resnet = nn.DataParallel(resnet)
+    resnet.fc = nn.Sequential(
+        nn.Linear(num_in_features, 512),
+        nn.BatchNorm1d(512),
+        nn.ReLU(inplace=True),
+        nn.Dropout(p=0.6),
+        nn.Linear(512, num_classes),
+    )
 
     resnet = resnet.to(device)
 
     return resnet
 
-def train_resnet(train_loader, test_loader, num_classes, epochs=10, lr=0.001, model = None, verbose=True, logger = None):
+def train_resnet(train_loader, test_loader, config, epochs=10, lr=0.001, model=None):
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
+    log = config.logger.log if config.logger else print
+
     if model is None:
-        resnet = setup_resnet(device, num_classes)
+        resnet = setup_resnet(config.device, config.num_classes)
     else:
         resnet = model
 
-    criterion = nn.CrossEntropyLoss()
-
-    base_model = model.module if isinstance(model, nn.DataParallel) else model
-
-    optimizer = optim.Adam([
-            {"params": base_model.layer3.parameters(), "lr": lr/100},
-            {"params": base_model.layer4.parameters(), "lr": lr/100},
-            {"params": base_model.fc.parameters(), "lr": lr},
-        ], weight_decay=1e-4)
+    criterion = nn.CrossEntropyLoss(weight=config.class_weights, label_smoothing=0.1)
     
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", patience=3, factor=0.1)
+    optimizer = _build_optimizer(resnet, lr)
+    
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="max", patience=7, factor=0.3, min_lr=1e-7
+    )
 
-    resnet = train_loop(resnet, optimizer, criterion, train_loader, epochs, device, test_loader, scheduler, verbose=verbose, logger=logger)
+    resnet = train_loop(
+        resnet,
+        optimizer, 
+        criterion, 
+        train_loader, 
+        config,
+        epochs, 
+        test_loader, 
+        scheduler, 
+    )
 
     metrics = evaluate_model(resnet, test_loader)
 
+    log(
+        f"[ResNet] Final → accuracy: {metrics['accuracy']*100:.2f}% | "
+        f"f1: {metrics['f1']*100:.2f}% | "
+        f"sensitivity: {metrics['sensitivity']*100:.2f}%"
+    )
+
     return resnet, metrics["accuracy"]
 
-def train_resnet_kfold(dataset, test_loader, num_classes, epochs=10, lr=0.001, model=None, num_workers=2, verbose=True, logger=None):
+def train_resnet_kfold(dataset, test_loader, config, epochs=10, lr=0.001, model=None):
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    log = config.logger.log if config.logger else print
 
     if model is None:
-        resnet = setup_resnet(device, num_classes)
+        resnet = setup_resnet(config.device, config.num_classes)
     else:
         resnet = model
 
-    criterion = nn.CrossEntropyLoss()
+    # Para K-Fold calculamos os pesos sobre o dataset completo
+    all_labels = np.array([dataset[i][1] for i in range(len(dataset))])
+    classes = np.arange(config.num_classes)
+    weights = compute_class_weight(class_weight="balanced", classes=classes, y=all_labels)
+    class_weights = torch.tensor(weights, dtype=torch.float32).to(config.device)
+
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
 
     resnet = train_kfold(
         model=resnet,
         optimizer_fn=lambda model: _build_optimizer(model, lr),
         criterion=criterion,
         dataset=dataset,
+        config=config,
         epochs=epochs, 
-        device=device,
-        num_workers=num_workers,
-        verbose=verbose,
-        logger=logger
     )
 
     metrics = evaluate_model(resnet, test_loader)
+
+    log(
+        f"[resNet K-Fold] Final → accuracy: {metrics['accuracy']*100:.2f}% | "
+        f"precision: {metrics['precision']*100:.2f}% | "
+        f"f1: {metrics['f1']*100:.2f}% | "
+        f"sensitivity: {metrics['sensitivity']*100:.2f}% | "
+        f"specificity: {metrics['specificity']*100:.2f}%"
+    )
 
     return resnet, metrics["accuracy"]
