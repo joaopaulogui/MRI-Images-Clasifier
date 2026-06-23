@@ -1,9 +1,10 @@
+from torchvision import datasets
+from PIL import Image
+import os
+import numpy as np
 import albumentations as A
-from albumentations.pytorch import ToTensorV2
 
-
-def get_train_transforms(img_width, img_height):
-    return A.Compose([
+transforms = A.Compose([
         A.Resize(224, 224),
 
         # ── Geometria ─────────────────────────────────────────────────────
@@ -36,17 +37,22 @@ def get_train_transforms(img_width, img_height):
 
         A.Resize(224, 224),
         A.CLAHE(clip_limit=(1.0, 4.0), tile_grid_size=(8, 8), p=0.5),
-
-        # ── Normalização ImageNet ─────────────────────────────────────────
-        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ToTensorV2(),
     ])
 
 
-def get_test_transforms(img_width, img_height):
-    return A.Compose([
-        A.Resize(img_width, img_height),
-        A.CLAHE(clip_limit=3.0, tile_grid_size=(8, 8), p=1.0),
-        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ToTensorV2(),
-    ])
+def test():
+
+    dataset = datasets.ImageFolder(root='resources/Kaggle/Training')
+
+    for idx, (img, label) in enumerate(dataset):
+        classe = dataset.classes[label]
+        pasta_saida = f'generated/data_augmented_images/{classe}'
+        os.makedirs(pasta_saida, exist_ok=True)
+
+        print(classe)
+
+        img_np = np.array(img).astype(np.float32) / 255.0
+        print(img_np.dtype)   # uint8 ou float?
+        img_np = transforms(image=img_np)['image']
+        img_np = (img_np * 255).astype(np.uint8)
+        Image.fromarray(img_np).save(f'generated/data_augmented_images/{classe}/{idx}.jpg')

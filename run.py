@@ -7,9 +7,9 @@ if __name__ == "__main__":
     print("Type 'train' to train the models, 'evaluate' to evaluate the models or 'infere' to infere the result")
     OPERATION = input()
 
-    TRAINING_DATA_DIR = "resources/MRI/Training"
-    TESTING_DATA_DIR = "resources/MRI/Testing"
-    IMAGE_PATH = "resources/MRI/Testing/meningioma_tumor/image.jpg"
+    TRAINING_DATA_DIR = "resources/Kaggle/Training"
+    TESTING_DATA_DIR = "resources/Kaggle/Testing"
+    IMAGE_PATH = "resources/Kaggle/Testing/meningioma_tumor/image.jpg"
 
     EPOCHS = 50
     LEARNING_RATE = 0.001

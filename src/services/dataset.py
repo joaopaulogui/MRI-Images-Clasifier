@@ -14,6 +14,8 @@ class AlbumentationsDataset(Dataset):
     def __getitem__(self, idx):
         img, label = self.subset[idx]
         img = np.array(img)
+        if img.dtype == "uint8":
+            img = img.astype(np.float32) / 255.0
 
         if img.ndim == 2:
             img = np.stack([img] * 3, axis=-1)
