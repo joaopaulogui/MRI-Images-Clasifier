@@ -15,7 +15,7 @@ def get_train_transforms(img_width, img_height):
         # Shear reduzido — ±0.5 rad (~28°) era agressivo demais,
         # ±0.15 rad (~8°) simula os cortes reais sem distorcer anatomia
         A.Affine(
-            shear={"x": (-0.5, 0.5), "y": (-0.5, 0.5)},
+            shear={"x": (-0.15, 0.15), "y": (-0.15, 0.15)},
             fit_output=True,
             p=0.4,
         ),
