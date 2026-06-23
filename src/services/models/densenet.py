@@ -38,9 +38,6 @@ def setup_densenet(device, num_classes):
         nn.Linear(512, num_classes),
     )
 
-    if torch.cuda.device_count() > 1:
-        densenet = nn.DataParallel(densenet)
-
     densenet = densenet.to(device)
 
     return densenet
@@ -97,10 +94,8 @@ def train_densenet(train_loader, test_loader, config, epochs=50, lr=0.001, model
 
 
 def train_densenet_kfold(dataset, test_loader, config, epochs=10, lr=0.001, model=None):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
     if model is None:
-        densenet = setup_densenet(device, config.num_classes)
+        densenet = setup_densenet(config.device, config.num_classes)
     else:
         densenet = model
 
@@ -110,7 +105,7 @@ def train_densenet_kfold(dataset, test_loader, config, epochs=10, lr=0.001, mode
     all_labels = np.array([dataset[i][1] for i in range(len(dataset))])
     classes = np.arange(config.num_classes)
     weights = compute_class_weight(class_weight="balanced", classes=classes, y=all_labels)
-    class_weights = torch.tensor(weights, dtype=torch.float32).to(device)
+    class_weights = torch.tensor(weights, dtype=torch.float32).to(config.device)
 
     criterion = nn.CrossEntropyLoss(weight=class_weights)
 
