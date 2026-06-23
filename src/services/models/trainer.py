@@ -1,4 +1,3 @@
-import gc
 import copy
 import torch
 from torch.utils.data import Subset
@@ -8,10 +7,6 @@ from src.services.dataset import get_data_loader
 from src.services.transforms import get_test_transforms, get_train_transforms
 from src.services.models.metrics import evaluate_model
 from src.services.models.utils import EarlyStopping
-
-import psutil, os
-
-process = psutil.Process(os.getpid())
 
 
 def train_loop(model, optimizer, criterion, train_loader, config, epochs, test_loader, scheduler=None):
@@ -33,40 +28,24 @@ def train_loop(model, optimizer, criterion, train_loader, config, epochs, test_l
         total = 0
 
         for step, (images, labels) in enumerate(train_loader):
-            ram_a = process.memory_info().rss / 1024**3
-
             images, labels = images.to(config.device), labels.to(config.device)
-
-            #ram_b = process.memory_info().rss / 1024**3
 
             optimizer.zero_grad()
 
             guesses = model(images)
-            #loss = criterion(guesses, labels)
+            loss = criterion(guesses, labels)
 
-            #ram_c = process.memory_info().rss / 1024**3
+            loss.backward()
+            optimizer.step()
 
-            #loss.backward()
-            #optimizer.step()
+            predicted = guesses.argmax(dim=1)
+            correct += (predicted == labels).sum().item()
+            total += labels.size(0)
 
-            #predicted = guesses.argmax(dim=1)
-            #correct += (predicted == labels).sum().item()
-            #total += labels.size(0)
+            loss_value = loss.item()
 
-            #ram_d = process.memory_info().rss / 1024**3
-
-            #loss_value = loss.item()
-
-            #del images, labels, guesses, predicted, loss
-            #gc.collect()
-
-            #if config.verbose:
-            #    log(f"Epoch [{epoch+1}/{epochs}] | Batch [{step+1}/{len(train_loader)}] | Loss: {loss_value:.4f}")
-
-            torch.cuda.empty_cache()
-
-            ram_after = process.memory_info().rss / 1024**3
-            log(f"RAM: {ram_a:.2f} GB → {ram_after:.2f} GB (delta: {ram_after - ram_a:.3f} GB)")
+            if config.verbose:
+                log(f"Epoch [{epoch+1}/{epochs}] | Batch [{step+1}/{len(train_loader)}] | Loss: {loss_value:.4f}")
 
 
         train_accuracy = correct / total
@@ -86,7 +65,6 @@ def train_loop(model, optimizer, criterion, train_loader, config, epochs, test_l
         # Salva o melhor checkpoint
         if val_accuracy > best_val_accuracy:
             best_val_accuracy = val_accuracy
-            del best_model_state
             best_model_state = copy.deepcopy(model.state_dict())
             log(f"  ✓ Novo melhor modelo salvo (val_accuracy={val_accuracy*100:.2f}%)")
 
@@ -103,7 +81,6 @@ def train_loop(model, optimizer, criterion, train_loader, config, epochs, test_l
     # Restaura o melhor estado encontrado durante o treino
     if best_model_state is not None:
         model.load_state_dict(best_model_state)
-        del best_model_state
         log(f"Melhor checkpoint restaurado: val_accuracy={best_val_accuracy*100:.2f}%")
 
     return model
@@ -173,7 +150,6 @@ def train_kfold(
 
         if metrics["accuracy"] > best_val_accuracy:
             best_val_accuracy = metrics["accuracy"]
-            del best_model_state
             best_model_state = copy.deepcopy(model.state_dict())
 
     mean_accuracy = sum(fold_accuracies) / len(fold_accuracies)
@@ -190,7 +166,6 @@ def train_kfold(
     log(f"{'='*50}")
 
     model.load_state_dict(best_model_state)
-    del best_model_state
     model.to(config.device)
 
     full_train_transforms = get_train_transforms(224, 224)
@@ -202,8 +177,5 @@ def train_kfold(
     # (sem val_loader real aqui, usamos o mesmo full loader só para monitorar loss)
     final_epochs = max(10, epochs // 3)
     model = train_loop(model, optimizer, criterion, full_train_loader, config, final_epochs, full_train_loader)
-
-    del full_train_loader
-    gc.collect()
 
     return model

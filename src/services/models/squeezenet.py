@@ -40,9 +40,6 @@ def setup_squeezenet(device, num_classes):
 
     squeezenet.classifier[1] = nn.Conv2d(num_in_channels, num_classes, kernel_size=(1, 1))
 
-    if torch.cuda.device_count() > 1:
-        squeezenet = nn.DataParallel(squeezenet)
-
     squeezenet = squeezenet.to(device)
 
     return squeezenet
