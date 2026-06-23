@@ -54,13 +54,13 @@ def train_loop(model, optimizer, criterion, train_loader, config, epochs, test_l
 
             ram_d = process.memory_info().rss / 1024**3
 
-            del images, labels, guesses, predicted
+            loss_value = loss.item()
 
+            del images, labels, guesses, predicted, loss
+            gc.collect()
 
             if config.verbose:
-                log(f"Epoch [{epoch+1}/{epochs}] | Batch [{step+1}/{len(train_loader)}] | Loss: {loss.item():.4f}")
-
-            del loss
+                log(f"Epoch [{epoch+1}/{epochs}] | Batch [{step+1}/{len(train_loader)}] | Loss: {loss_value:.4f}")
 
             ram_after = process.memory_info().rss / 1024**3
             log(f"RAM: {ram_a:.2f} GB → {ram_b:.2f} GB → {ram_c:.2f} GB → {ram_d:.2f} GB → {ram_after:.2f} GB (delta: {ram_after - ram_a:.3f} GB)")
