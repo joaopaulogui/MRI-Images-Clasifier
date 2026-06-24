@@ -14,7 +14,6 @@ def setup_densenet(device, num_classes):
     Carrega DenseNet201 pré-treinado e prepara para fine-tuning.
 
     Correções aplicadas:
-    - Descongela transition3 + denseblock4 (antes só denseblock4).
     - Adiciona BatchNorm + Dropout na cabeça classificadora para regularização.
     """
     densenet = models.densenet201(weights=models.DenseNet201_Weights.DEFAULT)

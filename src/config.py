@@ -28,7 +28,7 @@ class TrainingConfig:
     kfold_splits: int = 5
     
     #Early Stopping
-    early_stopping_patience: int = 10
+    early_stopping_patience: int = 20
     
     #Environment
     device: torch.device = field(default_factory=lambda: torch.device('cuda' if torch.cuda.is_available() else 'cpu'))

@@ -11,7 +11,7 @@ if __name__ == "__main__":
     TESTING_DATA_DIR = "resources/Kaggle/Testing"
     IMAGE_PATH = "resources/Kaggle/Testing/meningioma_tumor/image.jpg"
 
-    EPOCHS = 50
+    EPOCHS = 60
     LEARNING_RATE = 0.001
     MIN_ACCURACY = 0.9
     NUM_WORKERS = 2
