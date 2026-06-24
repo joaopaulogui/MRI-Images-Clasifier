@@ -27,7 +27,7 @@ def _get_class_weights(loader, num_classes, device):
     weights = compute_class_weight(class_weight="balanced", classes=classes, y=all_labels)
     return torch.tensor(weights, dtype=torch.float32).to(device)
 
-def train_pipeline(train_data_dir, test_data_dir, epochs, lr, min_accuracy, num_workers, verbose):
+def train_pipeline(train_data_dir, test_data_dir, epochs, lr, min_accuracy, num_workers, verbose, early_stopping_patience):
     train_ds = datasets.ImageFolder(root=train_data_dir)
     test_ds = datasets.ImageFolder(root=test_data_dir)
     classes = train_ds.classes
@@ -52,6 +52,7 @@ def train_pipeline(train_data_dir, test_data_dir, epochs, lr, min_accuracy, num_
         num_classes=num_classes,
         logger=Logger("generated/logs", "training"),
         verbose=verbose,
+        early_stopping_patience=early_stopping_patience
     )
 
     model_registry = {

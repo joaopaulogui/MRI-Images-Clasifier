@@ -15,7 +15,7 @@ def train_loop(model, optimizer, criterion, train_loader, config, epochs, test_l
     Retorna o modelo com o MELHOR estado de validação (best checkpoint),
     não necessariamente o do último epoch.
     """
-    early_stopper = EarlyStopping(patience=10)
+    early_stopper = EarlyStopping(patience=config.early_stopping_patience)
     log = config.logger.log if config.logger else print
 
     best_val_accuracy = 0.0
