@@ -1,7 +1,7 @@
 if __name__ == "__main__":
 
-    from src.utils.test_data_augmentations import test
-    test()
+    #from src.utils.test_data_augmentations import test
+    #test()
 
     from src.pipelines.train_pipeline import train_pipeline
     from src.services.controllers.inference_controller import infere
@@ -18,12 +18,13 @@ if __name__ == "__main__":
     LEARNING_RATE = 0.001
     MIN_ACCURACY = 0.9
     EARLY_STOPPING_PATIENCE = 20
+    REDUCE_LR_PATIENCE = 7
     NUM_WORKERS = 2
     VERBOSE = False
 
 
     if OPERATION == "train":
-        train_pipeline(TRAINING_DATA_DIR, TESTING_DATA_DIR, EPOCHS, LEARNING_RATE, MIN_ACCURACY, NUM_WORKERS, VERBOSE, EARLY_STOPPING_PATIENCE)
+        train_pipeline(TRAINING_DATA_DIR, TESTING_DATA_DIR, EPOCHS, LEARNING_RATE, MIN_ACCURACY, NUM_WORKERS, VERBOSE, EARLY_STOPPING_PATIENCE, REDUCE_LR_PATIENCE)
     elif OPERATION == "evaluate":
         evaluate(TESTING_DATA_DIR, NUM_WORKERS)
     elif OPERATION == "infere":

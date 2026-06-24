@@ -65,7 +65,7 @@ def train_resnet(train_loader, test_loader, config, epochs=10, lr=0.001, model=N
     optimizer = _build_optimizer(resnet, lr)
     
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="max", patience=7, factor=0.3, min_lr=1e-7
+        optimizer, mode="max", patience=config.reduce_lr_patience, factor=0.3, min_lr=1e-7
     )
 
     resnet = train_loop(

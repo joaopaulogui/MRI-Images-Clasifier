@@ -17,7 +17,7 @@ def _build_optimizer(model, lr):
 
     return optim.Adam(
         [
-            {"params": base_model.features[12].denseblock4.parameters(), "lr": lr / 10},
+            {"params": base_model.features[12].parameters(), "lr": lr / 10},
             {"params": base_model.classifier[1].parameters(), "lr": lr},
         ],
         weight_decay=1e-3,
@@ -56,7 +56,7 @@ def train_squeezenet(train_loader, test_loader, config, epochs=10, lr=0.001, mod
     optimizer = _build_optimizer(squeezenet, lr)
 
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="max", patience=7, factor=0.3, min_lr=1e-7
+        optimizer, mode="max", patience=config.reduce_lr_patience, factor=0.3, min_lr=1e-7
     )
 
     squeezenet = train_loop(squeezenet, optimizer, criterion, train_loader, config, epochs, test_loader, scheduler)

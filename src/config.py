@@ -11,6 +11,7 @@ class TrainingConfig:
     min_accuracy: float
     weight_decay: float = 1e-3
     label_smoothing: float = 0.1
+    reduce_lr_patience: int = 7
     
     #Data
     batch_size: int = 32
@@ -29,7 +30,7 @@ class TrainingConfig:
     
     #Early Stopping
     early_stopping_patience: int = 20
-    
+
     #Environment
     device: torch.device = field(default_factory=lambda: torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
     
