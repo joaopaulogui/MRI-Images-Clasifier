@@ -33,7 +33,7 @@ def setup_densenet(device, num_classes):
         nn.Linear(num_in_features, 512),
         nn.BatchNorm1d(512),
         nn.ReLU(inplace=True),
-        nn.Dropout(p=0.6),
+        nn.Dropout(p=0.4),
         nn.Linear(512, num_classes),
     )
 
