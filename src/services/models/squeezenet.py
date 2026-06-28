@@ -91,6 +91,8 @@ def train_squeezenet_kfold(dataset, test_loader, config, epochs=10, lr=0.001, mo
         epochs=epochs, 
     )
 
+    metrics = evaluate_model(squeezenet, test_loader)
+
     log(
         f"[SqueezeNet K-Fold] Final → accuracy: {metrics['accuracy']*100:.2f}% | "
         f"precision: {metrics['precision']*100:.2f}% | "
@@ -98,7 +100,5 @@ def train_squeezenet_kfold(dataset, test_loader, config, epochs=10, lr=0.001, mo
         f"sensitivity: {metrics['sensitivity']*100:.2f}% | "
         f"specificity: {metrics['specificity']*100:.2f}%"
     )
-
-    metrics = evaluate_model(squeezenet, test_loader)
 
     return squeezenet, metrics["accuracy"]

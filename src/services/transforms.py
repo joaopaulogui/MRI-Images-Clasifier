@@ -10,7 +10,7 @@ def get_train_transforms(img_width, img_height):
         A.HorizontalFlip(p=0.5),
 
         # Rotação conservadora como o artigo sugere
-        A.Rotate(limit=5, border_mode=0, p=0.5),
+        A.Rotate(limit=15, border_mode=0, p=0.5),
 
         # Shear reduzido — ±0.5 rad (~28°) era agressivo demais,
         # ±0.15 rad (~8°) simula os cortes reais sem distorcer anatomia
@@ -34,7 +34,7 @@ def get_train_transforms(img_width, img_height):
 
         # ── Intensidade e contraste ───────────────────────────────────────
         A.RandomBrightnessContrast(brightness_limit=(-0.1, 0.2), contrast_limit=(-0.1, 0.2), p=0.4),
-        A.RandomGamma(gamma_limit=(85, 120), p=0.3),
+        A.RandomGamma(gamma_limit=(90, 120), p=0.3),
 
         A.Resize(224, 224),
         A.CLAHE(clip_limit=(1.0, 4.0), tile_grid_size=(8, 8), p=0.5),
